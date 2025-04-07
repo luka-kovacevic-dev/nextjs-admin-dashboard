@@ -7,6 +7,8 @@ import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import Dashboard from '../components/Dashboard';
 
+export const runtime = 'edge';
+
 const Home = () => {
   useEffect(() => {
     import('bootstrap/dist/js/bootstrap.bundle.min.js');
