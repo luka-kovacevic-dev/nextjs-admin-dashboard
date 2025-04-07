@@ -1,188 +1,93 @@
-import React from 'react';
-import { useState, useEffect } from 'react';
-
-import axios from "axios";
-
-import { Box, Modal, FormControl, InputLabel, Input, Button } from '@mui/material'
-
-const style = {
-  position: 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  width: 400,
-  bgcolor: 'background.paper',
-  border: '2px solid #000',
-  boxShadow: 24,
-  p: 4,
-};
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Box, Modal, FormControl, InputLabel, Input, Button } from '@mui/material';
 
 const Dashboard = () => {
   const [items, setItems] = useState([]);
-  const [open, setOpen] = React.useState(false);
-
-  const [quote, setQuote] = useState('');
-  const [author, setAuthor] = useState('');
-  const [role, setRole] = useState('');
-  const [company, setCompany] = useState('');
-  const [image, setImage] = useState('');
-
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ quote: '', author: '', role: '', company: '', image: '' });
 
   const fetchTestimonials = async () => {
     try {
-      const response = await axios.get(
-        "https://worker-proxy-server.lukakovacevic0100.workers.dev/api/posts/luka/testimonials"
-      );
-
-      setItems(response.data);
+      const { data } = await axios.get("https://worker-proxy-server.lukakovacevic0100.workers.dev/api/posts/luka/testimonials");
+      setItems(data);
     } catch (error) {
-      console.error("Error fetching testimonials:", error);
+      console.error("Fetch error:", error);
     }
   };
 
   const handleAdd = async () => {
-    if (quote === '' || author === '' || role === '' || company === '' || image === '') {
-      console.log('Must fill the box');
+    if (Object.values(form).some(v => !v)) {
+      console.log('All fields required');
       return;
     }
-
     try {
-      const response = await axios.post(
-        "https://worker-proxy-server.lukakovacevic0100.workers.dev/api/posts/luka/testimonials",
-        {
-          quote,
-          author,
-          role,
-          company,
-          image
-        }
-      );
-
-      console.log("Add success");
+      await axios.post("https://worker-proxy-server.lukakovacevic0100.workers.dev/api/posts/luka/testimonials", form);
       setOpen(false);
+      setForm({ quote: '', author: '', role: '', company: '', image: '' });
       fetchTestimonials();
     } catch (error) {
-      console.error("Error adding testimonial:", error);
+      console.error("Add error:", error);
     }
-  }
+  };
 
   const handleDelete = async (id) => {
     try {
-      const response = await axios.delete(
-        `https://worker-proxy-server.lukakovacevic0100.workers.dev/api/posts/luka/testimonials/${id}`
-      );
-
-      console.log("Remove success");
+      await axios.delete(`https://worker-proxy-server.lukakovacevic0100.workers.dev/api/posts/luka/testimonials/${id}`);
       fetchTestimonials();
     } catch (error) {
-      console.error("Error deleting testimonials:", error);
+      console.error("Delete error:", error);
     }
-  }
+  };
 
-  useEffect(() => {
-    fetchTestimonials();
-  }, [])
+  useEffect(() => { fetchTestimonials(); }, []);
 
   return (
     <div style={{ padding: '20px' }}>
       <h2>Dashboard Content</h2>
-      <div className="container mt-5">
-        {/* Table header with Add button */}
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <h2 className="mb-0">Testimonials</h2>
-          <button
-            className="btn btn-primary"
-            onClick={handleOpen}
-          >
-            <i className="bi bi-plus-circle me-2"></i>Add New
-          </button>
+      <div style={{ marginTop: '1.25rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <h2 style={{ margin: 0 }}>Testimonials</h2>
+          <button onClick={() => setOpen(true)} style={{ padding: '0.375rem 0.75rem' }}>Add New</button>
         </div>
 
-        <Modal
-          open={open}
-          onClose={handleClose}
-          aria-labelledby="modal-modal-title"
-          aria-describedby="modal-modal-description"
-        >
-          <Box sx={style}>
-            <FormControl fullWidth margin='normal' required>
-              <InputLabel htmlFor="quote">Quote</InputLabel>
-              <Input id="quote" name="quote" value={quote} onChange={(e) => setQuote(e.target.value)} multiline />
-            </FormControl>
-
-            <FormControl fullWidth margin='normal' required>
-              <InputLabel htmlFor="author">Author</InputLabel>
-              <Input id="author" name="author" value={author} onChange={(e) => setAuthor(e.target.value)} />
-            </FormControl>
-
-            <FormControl fullWidth margin='normal' required>
-              <InputLabel htmlFor="role">Role</InputLabel>
-              <Input id="role" name="role" value={role} onChange={(e) => setRole(e.target.value)} />
-            </FormControl>
-
-            <FormControl fullWidth margin='normal' required>
-              <InputLabel htmlFor="company">Company</InputLabel>
-              <Input id="company" name="company" value={company} onChange={(e) => setCompany(e.target.value)} />
-            </FormControl>
-
-            <FormControl fullWidth margin='normal' required>
-              <InputLabel htmlFor="image-url">Image URL</InputLabel>
-              <Input id="image-url" name="image-url" value={image} onChange={(e) => setImage(e.target.value)} />
-            </FormControl>
-
-            <Button variant="contained" color="success" onClick={handleAdd}>Add</Button>
+        <Modal open={open} onClose={() => setOpen(false)}>
+          <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 400, bgcolor: 'background.paper', p: 4 }}>
+            {Object.keys(form).map((key) => (
+              <FormControl key={key} fullWidth margin='normal' required>
+                <InputLabel htmlFor={key}>{key.charAt(0).toUpperCase() + key.slice(1)}</InputLabel>
+                <Input id={key} value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} multiline={key === 'quote'} />
+              </FormControl>
+            ))}
+            <Button variant="contained" onClick={handleAdd} style={{ marginTop: '1rem' }}>Add</Button>
           </Box>
         </Modal>
 
-        {/* Styled table */}
-        <div className="card shadow-sm">
-          <div className="table-responsive">
-            <table className="table table-hover align-middle mb-0">
-              <thead className="table-light">
-                <tr>
-                  <th scope="col" className="ps-4">ID</th>
-                  <th scope="col">Quote</th>
-                  <th scope="col">Author</th>
-                  <th scope="col">Role</th>
-                  <th scope="col">Company</th>
-                  <th scope="col">Image URL</th>
-                  <th scope="col" className="text-end pe-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => (
-                  <tr key={item.id}>
-                    <td className="ps-4 fw-semibold">{item.id}</td>
-                    <td className="text-truncate" style={{ maxWidth: '200px' }} title={item.quote}>
-                      {item.quote}
-                    </td>
-                    <td>{item.author}</td>
-                    <td>{item.role}</td>
-                    <td>{item.company}</td>
-                    <td>{item.image}</td>
-                    <td className="text-end pe-4">
-                      <div className="btn-group btn-group-sm">
-                        {/* <button
-                          className="btn btn-outline-primary"
-                          onClick={() => console.log('Edit item', item.id)}
-                        >
-                          <i className="bi bi-pencil-square me-1"></i>Edit
-                        </button> */}
-                        <button
-                          className="btn btn-outline-danger ms-2"
-                          onClick={() => handleDelete(item.id)}
-                        >
-                          <i className="bi bi-trash me-1"></i>Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                {['ID', 'Quote', 'Author', 'Role', 'Company', 'Image URL', 'Actions'].map((h) => (
+                  <th key={h} style={{ padding: '0.75rem', textAlign: 'left' }}>{h}</th>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item) => (
+                <tr key={item.id}>
+                  <td style={{ padding: '0.75rem' }}>{item.id}</td>
+                  <td style={{ padding: '0.75rem', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.quote}</td>
+                  <td style={{ padding: '0.75rem' }}>{item.author}</td>
+                  <td style={{ padding: '0.75rem' }}>{item.role}</td>
+                  <td style={{ padding: '0.75rem' }}>{item.company}</td>
+                  <td style={{ padding: '0.75rem' }}>{item.image}</td>
+                  <td style={{ padding: '0.75rem', textAlign: 'right' }}>
+                    <button onClick={() => handleDelete(item.id)} style={{ padding: '0.25rem 0.5rem' }}>Delete</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
